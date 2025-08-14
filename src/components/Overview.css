@@ -1,0 +1,136 @@
+/* 主内容区 */
+ .main-content {
+      flex: 1;
+      max-width: 100%;
+      margin-left: var(--sidebar-width);
+      background: var(--background-light);
+      min-height: 100vh;
+    }
+    
+    .header {
+      padding: 2rem;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .dashboard {
+      padding: 1.5rem;
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+    
+    /* 卡片通用样式 */
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+  
+    /* 统计卡片 */
+    .summary-card {
+      grid-column: 1 / -1;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+    }
+    
+    .stat-item {
+      text-align: center;
+      padding: 1rem;
+    }
+    
+    .stat-item label {
+      display: block;
+      color: #666;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .positive {
+      color: #e61b1b;
+    }
+    
+    /* 图表容器 */
+    .chart-container {
+      margin-top: 1rem;
+      height: 300px;
+    }
+    
+    .chart-card {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 20px;
+      grid-column: 1 / -1;
+    }
+    
+    .chart-container {
+      width: 100%;
+      min-height: 500px;
+      background: rgb(255, 255, 255);
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5); /* 半透明黑色遮罩 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000; /* 确保在其它元素上方 */
+    }
+    
+    .modal-content {
+      background: white;
+      width: 800px;
+      max-height: 90vh; /* 最大高度为视口的90% */
+      border-radius: 8px;
+      padding: 24px;
+      position: relative;
+      overflow-y: auto; /* 内容过多时显示滚动条 */
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* 关闭按钮优化 */
+    .modal-header .close-button {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+      transition: color 0.2s;
+    }
+    
+    .modal-header .close-button:hover {
+      color: #333;
+    }
+    
+    .chart-container {
+      width: 100%;
+      height: 400px;
+      margin-top: 1rem;
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    
+  
