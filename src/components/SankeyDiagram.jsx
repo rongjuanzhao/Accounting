@@ -2,61 +2,114 @@ import { useEffect, useRef, useState } from 'react';
 import './SankeyDiagram.css';
 import { sankey, sankeyLinkHorizontal } from 'd3-sankey';
 import * as d3 from 'd3';
+import { useCategories } from '../contexts/CategoryContext'; // 新增导入
+
 const SankeyDiagram = ({ data }) => {
     const svgRef = useRef();
     const [containerSize, setContainerSize] = useState({ width: 800, height: 400 });
+    const { getAllCategoriesWithItems } = useCategories(); // 使用分类上下文
     
     // 定义数据
     const transformData = (assetsData) => {
-        const {
-            currentDeposit = 0,
-            alipay = 0,
-            wechat = 0,
-            car = 0,
-            house = 0,
-            fixedDeposit = 0,
-            stocks = 0,
-            receivable = 0  // 修改字段名
-        } = assetsData;
+        // 获取所有分类和子项
+        const allCategories = getAllCategoriesWithItems();
+        
+        // 初始化节点和连接数组
+        const nodes = [];
+        const links = [];
+        
+        // 创建节点ID映射
+        const nodeIdMap = {};
+        let nodeId = 0;
+        
+        // 添加"总资产"节点
+        nodes.push({ id: nodeId, name: "总资产", category: "total" });
+        nodeIdMap["总资产"] = nodeId++;
+        
+        // 为每个分类创建节点
+        Object.keys(allCategories).forEach(category => {
+            // 跳过负债分类，因为它不在资产桑基图中
+            if (category === '负债') return;
+            
+            nodes.push({ id: nodeId, name: category, category: getCategoryType(category) });
+            nodeIdMap[category] = nodeId++;
+            
+            // 创建从"总资产"到分类的连接
+            const categoryValue = allCategories[category].reduce((sum, item, index) => {
+                const fieldName = convertToFieldName(category, item, index);
+                return sum + (assetsData[fieldName] || 0);
+            }, 0);
+            
+            links.push({
+                source: nodeIdMap["总资产"],
+                target: nodeIdMap[category],
+                value: Math.max(0.01, categoryValue)
+            });
+            
+            // 为每个子项创建节点
+            allCategories[category].forEach((item, index) => {
+                const fieldName = convertToFieldName(category, item, index);
+                nodes.push({ id: nodeId, name: item, category: "detail" });
+                nodeIdMap[item] = nodeId++;
+                
+                // 创建从分类到子项的连接
+                links.push({
+                    source: nodeIdMap[category],
+                    target: nodeIdMap[item],
+                    value: Math.max(0.01, assetsData[fieldName] || 0)
+                });
+            });
+        });
+        
+        return { nodes, links };
+    };
     
-        const values = {
-            v1: Math.max(0.01, currentDeposit + alipay + wechat),
-            v2: Math.max(0.01, car + house),
-            v3: Math.max(0.01, fixedDeposit + stocks),
-            v4: Math.max(0.01, receivable)  // 修改字段名
+    // 获取分类类型
+    const getCategoryType = (category) => {
+        const categoryTypes = {
+            '流动资金': 'liquid',
+            '固定资产': 'fixed',
+            '投资理财': 'investment',
+            '应收款项': 'receivable'
+        };
+        return categoryTypes[category] || 'detail';
+    };
+    
+    // 将中文分类和子项转换为英文字段名（与Form.jsx中的一致）
+    const convertToFieldName = (category, item, index) => {
+        const categoryMap = {
+            '流动资金': {
+                '银行活期': 'currentDeposit',
+                '支付宝': 'alipay',
+                '微信': 'wechat'
+            },
+            '固定资产': {
+                '车辆价值': 'car',
+                '房产价值': 'house'
+            },
+            '投资理财': {
+                '定期存款': 'fixedDeposit',
+                '股票基金': 'stocks'
+            },
+            '应收款项': {
+                '他人借款': 'receivable'
+            },
+            '负债': {
+                '车贷': 'carLoan',
+                '房贷': 'mortgage',
+                '借贷': 'borrowing'
+            }
         };
     
-        return {
-            nodes: [
-                { id: 0, name: "总资产", category: "total" },
-                { id: 1, name: "流动资金", category: "liquid" },
-                { id: 2, name: "固定资产", category: "fixed" },
-                { id: 3, name: "投资理财", category: "investment" },
-                { id: 4, name: "应收款项", category: "receivable" },
-                { id: 5, name: "银行活期", category: "detail" },
-                { id: 6, name: "支付宝", category: "detail" },
-                { id: 7, name: "微信", category: "detail" },
-                { id: 8, name: "车辆价值", category: "detail" },
-                { id: 9, name: "房产价值", category: "detail" },
-                { id: 10, name: "定期存款", category: "detail" },
-                { id: 11, name: "股票基金", category: "detail" },
-                { id: 12, name: "他人借款", category: "detail" }
-            ],
-            links: [
-                { source: 0, target: 1, value: values.v1 },
-                { source: 0, target: 2, value: values.v2 },
-                { source: 0, target: 3, value: values.v3 },
-                { source: 0, target: 4, value: values.v4 },
-                { source: 1, target: 5, value: assetsData.currentDeposit },
-                { source: 1, target: 6, value: assetsData.alipay },
-                { source: 1, target: 7, value: assetsData.wechat },
-                { source: 2, target: 8, value: assetsData.car },
-                { source: 2, target: 9, value: assetsData.house },
-                { source: 3, target: 10, value: assetsData.fixedDeposit },
-                { source: 3, target: 11, value: assetsData.stocks },
-                { source: 4, target: 12, value: assetsData.receivable }  // 修改字段名
-            ]
-        };
+        // 对于默认子项，使用预定义的字段名
+        if (categoryMap[category] && categoryMap[category][item]) {
+            return categoryMap[category][item];
+        } else {
+            // 为自定义子项创建唯一标识符，包含索引确保唯一性
+            const safeCategory = category.replace(/[^a-zA-Z0-9]/g, '');
+            const safeItem = item.replace(/[^a-zA-Z0-9]/g, '');
+            return `${safeCategory}_${safeItem}_${index}`;
+        }
     };
 
     const sankeyGeneratorRef = useRef();

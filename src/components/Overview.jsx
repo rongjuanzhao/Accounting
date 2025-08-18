@@ -75,6 +75,7 @@ const Overview = () => {
                 </button>
               </div>
               <Form
+                initialData={assetsData}  // 传递当前资产数据作为初始数据
                 onUpdateData={handleUpdateData}
                 onSubmit={handleSubmit} // 传递提交回调
               />

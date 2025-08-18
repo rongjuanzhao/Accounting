@@ -3,7 +3,7 @@ import { useCategories } from '../contexts/CategoryContext';
 import './Form.css';
 
 
-const Form = ({ onUpdateData, onSubmit }) => {
+const Form = ({ onUpdateData, onSubmit, initialData = {} }) => {  // 添加initialData属性
   const { getAllCategoriesWithItems } = useCategories();
   const [formData, setFormData] = useState({});
   const [categories, setCategories] = useState({});
@@ -17,13 +17,14 @@ const Form = ({ onUpdateData, onSubmit }) => {
       items.forEach((item, index) => {
         // 将中文转换为英文字段名
         const fieldName = convertToFieldName(category, item, index);
-        initialFormData[fieldName] = 0;
+        // 使用传入的初始数据，如果没有则默认为0
+        initialFormData[fieldName] = initialData[fieldName] !== undefined ? initialData[fieldName] : 0;
       });
     });
     
     setFormData(initialFormData);
     setCategories(allCategories);
-  }, [getAllCategoriesWithItems]);
+  }, [getAllCategoriesWithItems, initialData]);  // 添加initialData到依赖数组
 
   // 将中文分类和子项转换为英文字段名
   const convertToFieldName = (category, item, index) => {
@@ -100,7 +101,7 @@ const Form = ({ onUpdateData, onSubmit }) => {
               <input
                 type="number"
                 name={fieldName}
-                value={formData[fieldName] || 0}
+                value={formData[fieldName] !== undefined ? formData[fieldName] : 0}  // 使用formData中的值
                 onChange={handleChange}
                 min="0"
                 required
