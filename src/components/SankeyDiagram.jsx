@@ -1,13 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './SankeyDiagram.css';
 import { sankey, sankeyLinkHorizontal } from 'd3-sankey';
 import * as d3 from 'd3';
-const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
+const SankeyDiagram = ({ data }) => {
     const svgRef = useRef();
+    const [containerSize, setContainerSize] = useState({ width: 800, height: 400 });
+    
     // 定义数据
     const transformData = (assetsData) => {
-        // 确保所有值都有默认值0
-        assetsData = assetsData || {};
         const {
             currentDeposit = 0,
             alipay = 0,
@@ -16,16 +16,16 @@ const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
             house = 0,
             fixedDeposit = 0,
             stocks = 0,
-            loans = 0
+            receivable = 0  // 修改字段名
         } = assetsData;
-
+    
         const values = {
             v1: Math.max(0.01, currentDeposit + alipay + wechat),
             v2: Math.max(0.01, car + house),
             v3: Math.max(0.01, fixedDeposit + stocks),
-            v4: Math.max(0.01, loans)
+            v4: Math.max(0.01, receivable)  // 修改字段名
         };
-
+    
         return {
             nodes: [
                 { id: 0, name: "总资产", category: "total" },
@@ -54,7 +54,7 @@ const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
                 { source: 2, target: 9, value: assetsData.house },
                 { source: 3, target: 10, value: assetsData.fixedDeposit },
                 { source: 3, target: 11, value: assetsData.stocks },
-                { source: 4, target: 12, value: assetsData.loans }
+                { source: 4, target: 12, value: assetsData.receivable }  // 修改字段名
             ]
         };
     };
@@ -63,11 +63,28 @@ const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
     const tooltipRef = useRef();
 
     useEffect(() => {
+        // 更新容器尺寸
+        const updateSize = () => {
+            if (svgRef.current) {
+                setContainerSize({
+                    width: svgRef.current.clientWidth,
+                    height: svgRef.current.clientHeight
+                });
+            }
+        };
+        
+        updateSize();
+        window.addEventListener('resize', updateSize);
+        
+        return () => window.removeEventListener('resize', updateSize);
+    }, []);
+
+    useEffect(() => {
         if (!svgRef.current || !data) return;
         
-          // 清理之前的SVG
-    d3.select(svgRef.current).selectAll("svg").remove();
-    
+        // 清理之前的SVG
+        d3.select(svgRef.current).selectAll("svg").remove();
+        
         // 添加数据校验
         const sankeyData = transformData(data);
         if (!sankeyData.nodes || !sankeyData.links) {
@@ -76,17 +93,25 @@ const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
         }
         
         drawSankey(sankeyData);
-    }, [data]);
+        
+        // 返回清理函数
+        return () => {
+            d3.select(svgRef.current).selectAll("*").remove();
+        };
+    }, [data, containerSize]);
 
 
-    const drawSankey = (sankeyData) => {  // 添加参数
+    const drawSankey = (sankeyData) => {
         // 设置图表尺寸
         const margin = { top: 20, right: 150, bottom: 20, left: 150 };
-        const width = svgRef.current.clientWidth - margin.left - margin.right;
-        const height = svgRef.current.clientHeight - margin.top - margin.bottom;
+        const width = containerSize.width - margin.left - margin.right;
+        const height = containerSize.height - margin.top - margin.bottom;
+
+        // 清理之前的图表
+        d3.select(svgRef.current).selectAll("svg").remove();
 
         // 创建SVG容器
-        const svg = d3.select(svgRef.current) // 
+        const svg = d3.select(svgRef.current)
             .append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
@@ -103,7 +128,7 @@ const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
             .extent([[0, 0], [width, height]]);
         sankeyGeneratorRef.current = sankeyGenerator;
 
-     
+        
         // 转换数据为d3-sankey格式
         const { nodes, links } = sankeyGenerator({
             nodes: sankeyData.nodes.map(d => Object.assign({}, d)),
@@ -113,11 +138,12 @@ const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
         // 设置节点颜色
         const nodeColor = d => {
             const colors = {
-                "income": "#6baed6",      // 蓝色系
-                "total_income": "#6baed6", // 蓝色系
-                "expenses": "#e6955c",     // 橙色系
-                "savings": "#7bc77e",      // 绿色系
-                "expense_detail": "#e6955c"// 橙色系
+                "total": "#4c78a8",
+                "liquid": "#72b7b2",
+                "fixed": "#eeca3b",
+                "investment": "#f58518",
+                "receivable": "#437c17",
+                "detail": "#9d755d"
             };
             return colors[d.category] || "#999";
         };
@@ -130,24 +156,14 @@ const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
             .append("path")
             .attr("class", "link")
             .attr("d", sankeyLinkHorizontal())
-            .attr("stroke", d => {
-                // 为不同的连接设置不同的颜色
-                if (d.source.category === "income" && d.target.category === "total_income") {
-                    return "#a4c8e5";  // 浅蓝色
-                } else if (d.source.category === "total_income" && d.target.category === "expenses") {
-                    return "#f0c8a0";  // 浅橙色
-                } else if (d.source.category === "total_income" && d.target.category === "savings") {
-                    return "#c6e2c6";  // 浅绿色
-                } else {
-                    return "#f0c8a0";  // 浅橙色
-                }
-            })
+            .attr("stroke", d => nodeColor(d.source))
             .attr("stroke-width", d => Math.max(1, d.width))
+            .attr("stroke-opacity", 0.5)
             .on("mouseover", function (event, d) {
                 d3.select(this)
                     .attr("stroke-opacity", 0.8);
                 tooltip.style("opacity", 1)
-                    .html(`<strong>流量:</strong> ${d.value.toFixed(2)}%`)
+                    .html(`<strong>金额:</strong> ¥${d.value.toLocaleString()}`)
                     .style("left", (event.pageX + 10) + "px")
                     .style("top", (event.pageY - 10) + "px");
             })
@@ -173,7 +189,7 @@ const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
 
                 let tooltipText = `<strong>${d.name}</strong>`;
                 if (d.value) {
-                    tooltipText += `<br>比例: ${d.value}%`;
+                    tooltipText += `<br>金额: ¥${d.value.toLocaleString()}`;
                 }
 
                 tooltip.style("opacity", 1)
@@ -193,57 +209,28 @@ const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
             .attr("fill", nodeColor);
 
         // 添加节点标签
-        // 修改节点标签部分
         node.append("text")
             .attr("x", d => {
-                if (d.category === "income") return -8;
-                if (d.category === "expense_detail") return d.x1 - d.x0 + 8;
+                if (d.category === "total") return -8;
+                if (d.category === "detail") return d.x1 - d.x0 + 8;
                 return (d.x1 - d.x0) / 2;
             })
             .attr("y", d => (d.y1 - d.y0) / 2)
             .attr("dy", "0.35em")
             .attr("text-anchor", d => {
-                if (d.category === "income") return "end";
-                if (d.category === "expense_detail") return "start";
+                if (d.category === "total") return "end";
+                if (d.category === "detail") return "start";
                 return "middle";
             })
-            .text(d => {
-                // 只显示名称和数值，不显示百分比
-                if (d.value) {
-                    return `${d.name} ${d.value}`;
-                }
-                return d.name;
-            })
+            .text(d => d.name)
             .attr("fill", "#333");
-        
-        // 修改中间节点的百分比标签
-        node.filter(d => d.category === "total_income" || d.category === "expenses" || d.category === "savings")
-            .append("text")
-            .attr("x", d => (d.x1 - d.x0) / 2)
-            .attr("y", d => (d.y1 - d.y0) / 2 + 20)
-            .attr("text-anchor", "middle")
-            .attr("dy", "0.35em")
-            .attr("font-size", "12px")
-            .text(d => {
-                // 计算此节点的总流入值
-                const totalValue = sankeyData.links.reduce((sum, l) => {
-                    if (l.target === d.id) {
-                        return sum + l.value;
-                    }
-                    return sum;
-                }, 0);
-                
-                if (totalValue > 0) {
-                    return `${totalValue}`; // 只显示数值，不显示百分号
-                }
-                return '';
-            });
 
        // 响应式调整
-        function resizeSankey() {
-            const sankeyGenerator = sankeyGeneratorRef.current;
-            const newWidth = svgRef.current.clientWidth - margin.left - margin.right;
-            const newHeight = svgRef.current.clientHeight - margin.top - margin.bottom;
+        const resizeSankey = () => {
+            if (!svgRef.current) return;
+            
+            const newWidth = containerSize.width - margin.left - margin.right;
+            const newHeight = containerSize.height - margin.top - margin.bottom;
         
             d3.select(svgRef.current).select("svg")
                 .attr("width", newWidth + margin.left + margin.right)
@@ -269,21 +256,11 @@ const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
                 .select("rect")
                 .attr("height", d => d.y1 - d.y0)
                 .attr("width", d => d.x1 - d.x0);
-        
-            // 更新文本位置   
-            svg.selectAll(".node text")
-                .data(newNodes)
-                .attr("x", d => {
-                    if (d.category === "income") return -8;
-                    if (d.category === "expense_detail") return d.x1 - d.x0 + 8;
-                    return (d.x1 - d.x0) / 2;
-                })
-                .attr("y", d => (d.y1 - d.y0) / 2);
-        }
+        };
 
         // 添加窗口大小变化监听器
         window.addEventListener('resize', resizeSankey);
-    }
+    };
 
 
     return (
@@ -291,9 +268,9 @@ const SankeyDiagram = ({ width = 1000, height = 500, data }) => {
             <div
                 className="sankey-diagram"
                 ref={svgRef}
-                style={{ width: `${width}px`, height: `${height}px` }}
+                style={{ width: '100%', height: '400px' }}
             />
-            <div className="tooltip" ref={tooltipRef}></div>
+            <div className="tooltip" ref={tooltipRef} style={{opacity: 0, position: 'absolute', backgroundColor: 'rgba(0,0,0,0.8)', color: 'white', padding: '8px', borderRadius: '4px', pointerEvents: 'none'}}></div>
         </div>
     );
 
