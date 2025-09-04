@@ -1,19 +1,14 @@
 
-import { Routes, Route } from 'react-router-dom';
 import { CategoryProvider } from './contexts/CategoryContext';
-import Overview from './components/Overview';
 import Sidebar from './components/Sidebar';
-import CategoryManagement from './components/CategoryManagement';
+import styles from './App.module.css';
 
-function App() {
+function App({ Component, pageProps }) {
   return (
     <CategoryProvider>
-      <div className="app-container">
+      <div className={styles.appContainer}>
         <Sidebar />
-        <Routes>
-          <Route path="/" element={<Overview />} />
-          <Route path="/category-management" element={<CategoryManagement />} />
-        </Routes>
+        <Component {...pageProps} />
       </div>
     </CategoryProvider>
   );

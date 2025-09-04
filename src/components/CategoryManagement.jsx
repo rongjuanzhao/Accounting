@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCategories } from '../contexts/CategoryContext';
-import './CategoryManagement.css';
+import styles from './CategoryManagement.module.css';
 
 // 默认分类和子项配置
 const defaultCategories = {
@@ -28,46 +28,46 @@ export default function CategoryManagement() {
   };
 
   return (
-    <div className="category-management">
+    <div className={styles.categoryManagement}>
       <h2 style={{ textAlign: 'left' }}>分类管理</h2>
       
-      <div className="category-tabs">
+      <div className={styles.categoryTabs}>
         {Object.keys(defaultCategories).map(category => (
           <button
             key={category}
-            className={`tab-button ${activeCategory === category ? 'active' : ''}`}
+            className={`${styles.tabButton} ${activeCategory === category ? styles.active : ''}`}
             onClick={() => setActiveCategory(category)}
           >
-            <span className="category-icon">{defaultCategories[category].icon}</span>
+            <span className={styles.categoryIcon}>{defaultCategories[category].icon}</span>
             {category}
           </button>
         ))}
       </div>
 
-      <div className="category-content">
+      <div className={styles.categoryContent}>
         {Object.keys(categories).map(category => (
           activeCategory === category && (
-            <div key={category} className="category-section">
+            <div key={category} className={styles.categorySection}>
               <h3>{defaultCategories[category].icon} {category}</h3>
               
-              <div className="items-list">
+              <div className={styles.itemsList}>
                 <h4>默认子项</h4>
-                <div className="default-items">
+                <div className={styles.defaultItems}>
                   {categories[category]?.defaultItems?.map((item, index) => (
-                    <div key={`default-${index}`} className="item default-item">
+                    <div key={`default-${index}`} className={`${styles.item} ${styles.defaultItem}`}>
                       <span>{item}</span>
-                      <span className="item-type">默认</span>
+                      <span className={styles.itemType}>默认</span>
                     </div>
                   ))}
                 </div>
 
                 <h4>自定义子项</h4>
-                <div className="custom-items">
+                <div className={styles.customItems}>
                   {categories[category]?.customItems?.map((item, index) => (
-                    <div key={`custom-${index}`} className="item custom-item">
+                    <div key={`custom-${index}`} className={`${styles.item} ${styles.customItem}`}>
                       <span>{item}</span>
                       <button 
-                        className="delete-btn"
+                        className={styles.deleteBtn}
                         onClick={() => handleDeleteItem(category, index)}
                       >
                         删除
@@ -76,7 +76,7 @@ export default function CategoryManagement() {
                   ))}
                 </div>
 
-                <div className="add-item-section">
+                <div className={styles.addItemSection}>
                   <input
                     type="text"
                     placeholder="输入新子项名称"
@@ -85,7 +85,7 @@ export default function CategoryManagement() {
                     onKeyPress={(e) => e.key === 'Enter' && handleAddItem(category)}
                   />
                   <button 
-                    className="add-btn"
+                    className={styles.addBtn}
                     onClick={() => handleAddItem(category)}
                   >
                     添加子项

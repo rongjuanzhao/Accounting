@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import './SankeyDiagram.css';
+import styles from './SankeyDiagram.module.css';
 import { sankey, sankeyLinkHorizontal } from 'd3-sankey';
 import * as d3 from 'd3';
 import { useCategories } from '../contexts/CategoryContext'; // 新增导入
@@ -7,6 +7,9 @@ import { useCategories } from '../contexts/CategoryContext'; // 新增导入
 const SankeyDiagram = ({ data }) => {
     const svgRef = useRef();
     const [containerSize, setContainerSize] = useState({ width: 800, height: 400 });
+    
+    // 创建tooltip引用
+    const tooltipRef = useRef();
     const { getAllCategoriesWithItems } = useCategories(); // 使用分类上下文
     
     // 定义数据
@@ -113,7 +116,6 @@ const SankeyDiagram = ({ data }) => {
     };
 
     const sankeyGeneratorRef = useRef();
-    const tooltipRef = useRef();
 
     useEffect(() => {
         // 更新容器尺寸
@@ -168,11 +170,17 @@ const SankeyDiagram = ({ data }) => {
             .append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
+            .attr("class", styles.sankeyDiagram)
             .append("g")
             .attr("transform", `translate(${margin.left},${margin.top})`);
 
         // 创建tooltip
         const tooltip = d3.select(tooltipRef.current);
+        
+        // 添加tooltip容器
+        if (tooltipRef.current) {
+            tooltipRef.current.className = styles.tooltip;
+        }
 
         // 创建sankey图
         const sankeyGenerator = sankey()
@@ -203,11 +211,11 @@ const SankeyDiagram = ({ data }) => {
 
         // 创建连接
         const link = svg.append("g")
-            .selectAll(".link")
+            .selectAll("." + styles.link)
             .data(links)
             .enter()
             .append("path")
-            .attr("class", "link")
+            .attr("class", styles.link)
             .attr("d", sankeyLinkHorizontal())
             .attr("stroke", d => nodeColor(d.source))
             .attr("stroke-width", d => Math.max(1, d.width))
@@ -228,11 +236,11 @@ const SankeyDiagram = ({ data }) => {
 
         // 创建节点
         const node = svg.append("g")
-            .selectAll(".node")
+            .selectAll("." + styles.node)
             .data(nodes)
             .enter()
             .append("g")
-            .attr("class", "node")
+            .attr("class", styles.node)
             .attr("transform", d => `translate(${d.x0},${d.y0})`)
             .on("mouseover", function (event, d) {
                 // 高亮相关连接
@@ -297,13 +305,13 @@ const SankeyDiagram = ({ data }) => {
             });
         
             // 更新连接
-            svg.selectAll(".link")
+            svg.selectAll("." + styles.link)
                 .data(newLinks)
                 .attr("d", sankeyLinkHorizontal())
                 .attr("stroke-width", d => Math.max(1, d.width));
         
             // 更新节点位置
-            svg.selectAll(".node")
+            svg.selectAll("." + styles.node)
                 .data(newNodes)
                 .attr("transform", d => `translate(${d.x0},${d.y0})`)
                 .select("rect")
@@ -317,13 +325,13 @@ const SankeyDiagram = ({ data }) => {
 
 
     return (
-        <div className="container">
+        <div className={styles.container}>
             <div
-                className="sankey-diagram"
+                className={styles.sankeyDiagram}
                 ref={svgRef}
                 style={{ width: '100%', height: '400px' }}
             />
-            <div className="tooltip" ref={tooltipRef} style={{opacity: 0, position: 'absolute', backgroundColor: 'rgba(0,0,0,0.8)', color: 'white', padding: '8px', borderRadius: '4px', pointerEvents: 'none'}}></div>
+            <div className={styles.tooltip} ref={tooltipRef} style={{opacity: 0, position: 'absolute', backgroundColor: 'rgba(0,0,0,0.8)', color: 'white', padding: '8px', borderRadius: '4px', pointerEvents: 'none'}}></div>
         </div>
     );
 

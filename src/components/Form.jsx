@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useCategories } from '../contexts/CategoryContext';
-import './Form.css';
+import styles from './Form.module.css';
 
 
 const Form = ({ onUpdateData, onSubmit, initialData = {} }) => {  // 添加initialData属性
@@ -91,14 +91,14 @@ const Form = ({ onUpdateData, onSubmit, initialData = {} }) => {  // 添加initi
     }
 
     return Object.entries(categories).map(([category, items]) => (
-      <fieldset key={category} className="form-section">
+      <fieldset key={category} className={styles.formSection}>
         <legend>{category}</legend>
         {items.map((item, index) => {
           const fieldName = convertToFieldName(category, item, index);
           return (
-            <div key={fieldName} className="form-item">
+            <div key={fieldName} className={styles.formItem}>
               <label>{item}：</label>
-              <input
+              <input className={styles.numberInput}
                 type="number"
                 name={fieldName}
                 value={formData[fieldName] !== undefined ? formData[fieldName] : 0}  // 使用formData中的值
@@ -114,9 +114,9 @@ const Form = ({ onUpdateData, onSubmit, initialData = {} }) => {  // 添加initi
   };
 
   return (
-    <form className="form-container" onSubmit={handleSubmit}>
+    <form className={styles.formContainer} onSubmit={handleSubmit}>
       {renderFormFields()}
-      <button type="submit" className="submit-button">
+      <button type="submit" className={styles.submitButton}>
         提交资产信息
       </button>
     </form>

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Link , useLocation} from 'react-router-dom';
-import './Sidebar.css';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import styles from './Sidebar.module.css';
 
 const menuItems = [
   { name: '总览', path: '/' },
@@ -8,16 +9,16 @@ const menuItems = [
 ];
 
 export default function Sidebar() {
-   const location = useLocation();
+  const router = useRouter();
 
   return (
-    <nav className="sidebar">
-      <div className="logo">个人财务管理</div>
+    <nav className={styles.sidebar}>
+      <div className={styles.logo}>个人财务管理</div>
       {menuItems.map((item) => (
         <Link
           key={item.path}
-          to={item.path}
-          className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+          href={item.path}
+          className={`${styles.navItem} ${router.pathname === item.path ? styles.active : ''}`}
         >
           {item.name}
         </Link>
