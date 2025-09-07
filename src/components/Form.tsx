@@ -4,16 +4,30 @@ import { useState, useEffect } from 'react';
 import { useCategories } from '../contexts/CategoryContext';
 import styles from './Form.module.css';
 
+// 定义类型
+interface FormData {
+  [key: string]: number;
+}
 
-const Form = ({ onUpdateData, onSubmit, initialData = {} }) => {  // 添加initialData属性
+interface Categories {
+  [key: string]: string[];
+}
+
+interface FormProps {
+  onUpdateData?: (name: string, value: number) => void;
+  onSubmit?: (formData: FormData) => void;
+  initialData?: FormData;
+}
+
+const Form = ({ onUpdateData, onSubmit, initialData = {} }: FormProps) => {
   const { getAllCategoriesWithItems } = useCategories();
-  const [formData, setFormData] = useState({});
-  const [categories, setCategories] = useState({});
+  const [formData, setFormData] = useState<FormData>({});
+  const [categories, setCategories] = useState<Categories>({});
 
   // 根据分类数据动态生成表单结构
   useEffect(() => {
     const allCategories = getAllCategoriesWithItems();
-    const initialFormData = {};
+    const initialFormData: FormData = {};
     
     Object.entries(allCategories).forEach(([category, items]) => {
       items.forEach((item, index) => {
@@ -29,8 +43,8 @@ const Form = ({ onUpdateData, onSubmit, initialData = {} }) => {  // 添加initi
   }, [getAllCategoriesWithItems, initialData]);  // 添加initialData到依赖数组
 
   // 将中文分类和子项转换为英文字段名
-  const convertToFieldName = (category, item, index) => {
-    const categoryMap = {
+  const convertToFieldName = (category: string, item: string, index: number): string => {
+    const categoryMap: { [key: string]: { [key: string]: string } } = {
       '流动资金': {
         '银行活期': 'currentDeposit',
         '支付宝': 'alipay',
@@ -65,7 +79,7 @@ const Form = ({ onUpdateData, onSubmit, initialData = {} }) => {  // 添加initi
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const numericValue = Math.max(0, Number(value) || 0);
     setFormData(prev => ({
@@ -74,14 +88,17 @@ const Form = ({ onUpdateData, onSubmit, initialData = {} }) => {  // 添加initi
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 提交时一次性更新所有数据
-    Object.entries(formData).forEach(([key, value]) => {
-      onUpdateData(key, value);
-    });
+    // 如果提供了onUpdateData回调，则更新所有数据
+    if (typeof onUpdateData === 'function') {
+      Object.entries(formData).forEach(([key, value]) => {
+        onUpdateData(key, value);
+      });
+    }
 
+    // 如果提供了onSubmit回调，则提交表单数据
     if (typeof onSubmit === 'function') {
       onSubmit(formData);
     }

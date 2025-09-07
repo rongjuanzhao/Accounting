@@ -2,29 +2,33 @@
 
 import { useEffect, useRef, useState } from 'react';
 import styles from './SankeyDiagram.module.css';
-import { sankey, sankeyLinkHorizontal } from 'd3-sankey';
+import { sankey, sankeyLinkHorizontal, SankeyNodeMinimal } from 'd3-sankey';
 import * as d3 from 'd3';
 import { useCategories } from '../contexts/CategoryContext'; // 新增导入
 
-const SankeyDiagram = ({ data }) => {
-    const svgRef = useRef();
+interface SankeyDiagramProps {
+  data: { [key: string]: number };
+}
+
+const SankeyDiagram = ({ data }: SankeyDiagramProps) => {
+    const svgRef = useRef<SVGSVGElement>(null);
     const [containerSize, setContainerSize] = useState({ width: 800, height: 400 });
     
     // 创建tooltip引用
-    const tooltipRef = useRef();
+    const tooltipRef = useRef<HTMLDivElement>(null);
     const { getAllCategoriesWithItems } = useCategories(); // 使用分类上下文
     
     // 定义数据
-    const transformData = (assetsData) => {
+    const transformData = (assetsData: { [key: string]: number }) => {
         // 获取所有分类和子项
         const allCategories = getAllCategoriesWithItems();
         
         // 初始化节点和连接数组
-        const nodes = [];
-        const links = [];
+        const nodes: { id: number; name: string; category: string; value?: number; x0?: number; x1?: number; y0?: number; y1?: number }[] = [];
+        const links: { source: number; target: number; value: number }[] = [];
         
         // 创建节点ID映射
-        const nodeIdMap = {};
+        const nodeIdMap: { [key: string]: number } = {};
         let nodeId = 0;
         
         // 添加"总资产"节点
@@ -70,8 +74,8 @@ const SankeyDiagram = ({ data }) => {
     };
     
     // 获取分类类型
-    const getCategoryType = (category) => {
-        const categoryTypes = {
+    const getCategoryType = (category: string) => {
+        const categoryTypes: { [key: string]: string } = {
             '流动资金': 'liquid',
             '固定资产': 'fixed',
             '投资理财': 'investment',
@@ -81,8 +85,8 @@ const SankeyDiagram = ({ data }) => {
     };
     
     // 将中文分类和子项转换为英文字段名（与Form.jsx中的一致）
-    const convertToFieldName = (category, item, index) => {
-        const categoryMap = {
+    const convertToFieldName = (category: string, item: string, index: number) => {
+        const categoryMap: { [key: string]: { [key: string]: string } } = {
             '流动资金': {
                 '银行活期': 'currentDeposit',
                 '支付宝': 'alipay',
@@ -117,7 +121,7 @@ const SankeyDiagram = ({ data }) => {
         }
     };
 
-    const sankeyGeneratorRef = useRef();
+    const sankeyGeneratorRef = useRef<any>(null);
 
     useEffect(() => {
         // 更新容器尺寸
@@ -158,7 +162,7 @@ const SankeyDiagram = ({ data }) => {
     }, [data, containerSize]);
 
 
-    const drawSankey = (sankeyData) => {
+    const drawSankey = (sankeyData: { nodes: { id: number; name: string; category: string; value?: number; x0?: number; x1?: number; y0?: number; y1?: number }[]; links: { source: number; target: number; value: number }[] }) => {
         // 设置图表尺寸
         const margin = { top: 20, right: 150, bottom: 20, left: 150 };
         const width = containerSize.width - margin.left - margin.right;
@@ -199,16 +203,20 @@ const SankeyDiagram = ({ data }) => {
         });
 
         // 设置节点颜色
-        const nodeColor = d => {
-            const colors = {
-                "total": "#4c78a8",
-                "liquid": "#72b7b2",
-                "fixed": "#eeca3b",
-                "investment": "#f58518",
-                "receivable": "#437c17",
-                "detail": "#9d755d"
-            };
-            return colors[d.category] || "#999";
+        const nodeColor = (d: { category: string } | SankeyNodeMinimal<{}, {}>) => {
+            // 确保我们处理的是具有category属性的对象
+            if (typeof d === 'object' && 'category' in d) {
+                const colors: { [key: string]: string } = {
+                    "total": "#4c78a8",
+                    "liquid": "#72b7b2",
+                    "fixed": "#eeca3b",
+                    "investment": "#f58518",
+                    "receivable": "#437c17",
+                    "detail": "#9d755d"
+                };
+                return colors[(d as { category: string }).category] || "#999";
+            }
+            return "#999";
         };
 
         // 创建连接
@@ -219,8 +227,14 @@ const SankeyDiagram = ({ data }) => {
             .append("path")
             .attr("class", styles.link)
             .attr("d", sankeyLinkHorizontal())
-            .attr("stroke", d => nodeColor(d.source))
-            .attr("stroke-width", d => Math.max(1, d.width))
+            .attr("stroke", d => {
+                // 确保source是一个对象而不是索引
+                if (typeof d.source === 'object') {
+                    return nodeColor(d.source as SankeyNodeMinimal<{}, {}>);
+                }
+                return "#999"; // 默认颜色
+            })
+            .attr("stroke-width", d => Math.max(1, d.width || 0))
             .attr("stroke-opacity", 0.5)
             .on("mouseover", function (event, d) {
                 d3.select(this)
@@ -246,12 +260,18 @@ const SankeyDiagram = ({ data }) => {
             .attr("transform", d => `translate(${d.x0},${d.y0})`)
             .on("mouseover", function (event, d) {
                 // 高亮相关连接
-                link.style("stroke-opacity", l =>
-                    l.source.id === d.id || l.target.id === d.id ? 0.8 : 0.1
-                );
+                link.style("stroke-opacity", l => {
+                    // 确保source和target是对象而不是索引
+                    if (typeof l.source === 'object' && typeof l.target === 'object' && typeof d === 'object') {
+                        return (l.source as SankeyNodeMinimal<{}, {}>).index === d.index || (l.target as SankeyNodeMinimal<{}, {}>).index === d.index ? 0.8 : 0.1;
+                    }
+                    return 0.1; // 默认不透明度
+                });
 
-                let tooltipText = `<strong>${d.name}</strong>`;
-                if (d.value) {
+                // 从节点数据中提取name属性
+                const nodeName = 'name' in d ? d.name as string : '';
+                let tooltipText = `<strong>${nodeName}</strong>`;
+                if ('value' in d && d.value) {
                     tooltipText += `<br>金额: ¥${d.value.toLocaleString()}`;
                 }
 
@@ -267,25 +287,29 @@ const SankeyDiagram = ({ data }) => {
 
         // 添加节点矩形
         node.append("rect")
-            .attr("height", d => d.y1 - d.y0)
-            .attr("width", d => d.x1 - d.x0)
+            .attr("height", d => (d.y1 || 0) - (d.y0 || 0))
+            .attr("width", d => (d.x1 || 0) - (d.x0 || 0))
             .attr("fill", nodeColor);
 
         // 添加节点标签
         node.append("text")
             .attr("x", d => {
-                if (d.category === "total") return -8;
-                if (d.category === "detail") return d.x1 - d.x0 + 8;
-                return (d.x1 - d.x0) / 2;
+                // 从节点数据中提取category属性
+                const category = 'category' in d ? d.category as string : '';
+                if (category === "total") return -8;
+                if (category === "detail") return (d.x1 || 0) - (d.x0 || 0) + 8;
+                return ((d.x1 || 0) - (d.x0 || 0)) / 2;
             })
-            .attr("y", d => (d.y1 - d.y0) / 2)
+            .attr("y", d => ((d.y1 || 0) - (d.y0 || 0)) / 2)
             .attr("dy", "0.35em")
             .attr("text-anchor", d => {
-                if (d.category === "total") return "end";
-                if (d.category === "detail") return "start";
+                // 从节点数据中提取category属性
+                const category = 'category' in d ? d.category as string : '';
+                if (category === "total") return "end";
+                if (category === "detail") return "start";
                 return "middle";
             })
-            .text(d => d.name)
+            .text(d => 'name' in d ? d.name as string : '')
             .attr("fill", "#333");
 
        // 响应式调整
@@ -310,15 +334,15 @@ const SankeyDiagram = ({ data }) => {
             svg.selectAll("." + styles.link)
                 .data(newLinks)
                 .attr("d", sankeyLinkHorizontal())
-                .attr("stroke-width", d => Math.max(1, d.width));
+                .attr("stroke-width", d => Math.max(1, d.width || 0));
         
             // 更新节点位置
             svg.selectAll("." + styles.node)
                 .data(newNodes)
-                .attr("transform", d => `translate(${d.x0},${d.y0})`)
+                .attr("transform", d => `translate(${d.x0 || 0},${d.y0 || 0})`)
                 .select("rect")
-                .attr("height", d => d.y1 - d.y0)
-                .attr("width", d => d.x1 - d.x0);
+                .attr("height", d => (d.y1 || 0) - (d.y0 || 0))
+                .attr("width", d => (d.x1 || 0) - (d.x0 || 0));
         };
 
         // 添加窗口大小变化监听器
@@ -330,9 +354,10 @@ const SankeyDiagram = ({ data }) => {
         <div className={styles.container}>
             <div
                 className={styles.sankeyDiagram}
-                ref={svgRef}
                 style={{ width: '100%', height: '400px' }}
-            />
+            >
+                <svg ref={svgRef} style={{ width: '100%', height: '100%' }} />
+            </div>
             <div className={styles.tooltip} ref={tooltipRef} style={{opacity: 0, position: 'absolute', backgroundColor: 'rgba(0,0,0,0.8)', color: 'white', padding: '8px', borderRadius: '4px', pointerEvents: 'none'}}></div>
         </div>
     );

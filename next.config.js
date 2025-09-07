@@ -7,6 +7,10 @@ const nextConfig = {
   env: {
     POSTGRES_URL: process.env.POSTGRES_URL,
   },
+  // Enable TypeScript support
+  typescript: {
+    ignoreBuildErrors: false,
+  },
 }
 
 export default nextConfig

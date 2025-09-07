@@ -1,9 +1,32 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+
+// 定义类型
+interface CategoryConfig {
+  defaultItems: string[];
+  icon: string;
+}
+
+interface CategoryData {
+  defaultItems: string[];
+  customItems: string[];
+}
+
+interface Categories {
+  [key: string]: CategoryData;
+}
+
+interface CategoryContextType {
+  categories: Categories;
+  addCustomItem: (category: string, itemName: string) => void;
+  deleteCustomItem: (category: string, index: number) => void;
+  getAllItems: (category: string) => string[];
+  getAllCategoriesWithItems: () => { [key: string]: string[] };
+}
 
 // 默认分类和子项配置
-const defaultCategories = {
+const defaultCategories: { [key: string]: CategoryConfig } = {
   '流动资金': {
     defaultItems: ['银行活期', '支付宝', '微信'],
     icon: '💰'
@@ -26,7 +49,7 @@ const defaultCategories = {
   }
 };
 
-const CategoryContext = createContext();
+const CategoryContext = createContext<CategoryContextType | undefined>(undefined);
 
 export const useCategories = () => {
   const context = useContext(CategoryContext);
@@ -36,12 +59,16 @@ export const useCategories = () => {
   return context;
 };
 
-export const CategoryProvider = ({ children }) => {
-  const [categories, setCategories] = useState({});
+interface CategoryProviderProps {
+  children: ReactNode;
+}
+
+export const CategoryProvider = ({ children }: CategoryProviderProps) => {
+  const [categories, setCategories] = useState<Categories>({});
 
   // 初始化分类数据
   useEffect(() => {
-    const initialized = {};
+    const initialized: Categories = {};
     Object.keys(defaultCategories).forEach(category => {
       initialized[category] = {
         defaultItems: [...defaultCategories[category].defaultItems],
@@ -52,7 +79,7 @@ export const CategoryProvider = ({ children }) => {
   }, []);
 
   // 添加自定义子项
-  const addCustomItem = (category, itemName) => {
+  const addCustomItem = (category: string, itemName: string) => {
     if (!itemName?.trim()) return;
 
     setCategories(prev => ({
@@ -65,7 +92,7 @@ export const CategoryProvider = ({ children }) => {
   };
 
   // 删除自定义子项
-  const deleteCustomItem = (category, index) => {
+  const deleteCustomItem = (category: string, index: number) => {
     setCategories(prev => ({
       ...prev,
       [category]: {
@@ -76,21 +103,21 @@ export const CategoryProvider = ({ children }) => {
   };
 
   // 获取所有子项（包括默认和自定义）
-  const getAllItems = (category) => {
+  const getAllItems = (category: string) => {
     if (!categories[category]) return [];
     return [...categories[category].defaultItems, ...categories[category].customItems];
   };
 
   // 获取所有分类的所有子项
   const getAllCategoriesWithItems = () => {
-    const result = {};
+    const result: { [key: string]: string[] } = {};
     Object.keys(defaultCategories).forEach(category => {
       result[category] = getAllItems(category);
     });
     return result;
   };
 
-  const value = {
+  const value: CategoryContextType = {
     categories,
     addCustomItem,
     deleteCustomItem,

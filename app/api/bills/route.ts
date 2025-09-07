@@ -1,5 +1,6 @@
 import prisma from '../../../server/prisma/client';
 import { NextResponse } from 'next/server';
+import { type NextRequest } from 'next/server';
 
 export async function GET() {
   try {
@@ -16,12 +17,12 @@ export async function GET() {
     });
     
     return NextResponse.json(parsedBills);
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }
 
-export async function POST(request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
@@ -61,7 +62,7 @@ export async function POST(request) {
     };
     
     return NextResponse.json(parsedBill);
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json({ message: error.message }, { status: 400 });
   }
 }

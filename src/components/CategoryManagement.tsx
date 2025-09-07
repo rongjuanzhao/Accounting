@@ -5,7 +5,7 @@ import { useCategories } from '../contexts/CategoryContext';
 import styles from './CategoryManagement.module.css';
 
 // 默认分类和子项配置
-const defaultCategories = {
+const defaultCategories: { [key: string]: { defaultItems: string[]; icon: string } } = {
   '流动资金': { defaultItems: ['银行活期', '支付宝', '微信'], icon: '💰' },
   '固定资产': { defaultItems: ['车辆价值', '房产价值'], icon: '🏠' },
   '投资理财': { defaultItems: ['定期存款', '股票基金'], icon: '📈' },
@@ -13,19 +13,23 @@ const defaultCategories = {
   '负债': { defaultItems: ['车贷', '房贷', '借贷'], icon: '💳' }
 };
 
+interface NewItemName {
+  [key: string]: string;
+}
+
 export default function CategoryManagement() {
   const { addCustomItem, deleteCustomItem, categories } = useCategories();
-  const [newItemName, setNewItemName] = useState({});
-  const [activeCategory, setActiveCategory] = useState('流动资金');
+  const [newItemName, setNewItemName] = useState<NewItemName>({});
+  const [activeCategory, setActiveCategory] = useState<string>('流动资金');
 
-  const handleAddItem = (category) => {
+  const handleAddItem = (category: string) => {
     const itemName = newItemName[category]?.trim();
     if (!itemName) return;
     addCustomItem(category, itemName);
     setNewItemName(prev => ({ ...prev, [category]: '' }));
   };
 
-  const handleDeleteItem = (category, index) => {
+  const handleDeleteItem = (category: string, index: number) => {
     deleteCustomItem(category, index);
   };
 

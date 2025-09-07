@@ -1,9 +1,10 @@
 import prisma from '../../../../server/prisma/client';
 import { NextResponse } from 'next/server';
+import { type NextRequest } from 'next/server';
 
-export async function PATCH(request, { params }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     
     const bill = await prisma.bill.update({
@@ -21,21 +22,21 @@ export async function PATCH(request, { params }) {
     };
     
     return NextResponse.json(parsedBill);
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json({ message: error.message }, { status: 400 });
   }
 }
 
-export async function DELETE(request, { params }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     await prisma.bill.delete({
       where: { id: parseInt(id) }
     });
     
     return NextResponse.json({ message: 'Bill deleted' });
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.json({ message: error.message }, { status: 500 });
   }
 }

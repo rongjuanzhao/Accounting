@@ -2,15 +2,32 @@
 
 import { useState, useEffect, useRef } from 'react';
 import styles from './Overview.module.css';
-import Form from './Form.jsx';
-import Sidebar from './Sidebar.jsx';
-import SankeyDiagram from './SankeyDiagram.jsx';
+import Form from './Form';
+import Sidebar from './Sidebar';
+import SankeyDiagram from './SankeyDiagram';
+import AssetUpdateModal from './AssetUpdateModal';
+
+// 定义资产数据类型
+interface AssetsData {
+  currentDeposit: number; // 银行活期
+  alipay: number;        // 支付宝
+  wechat: number;        // 微信
+  car: number;           // 车辆价值
+  house: number;         // 房产价值
+  fixedDeposit: number;  // 定期存款
+  stocks: number;        // 股票基金
+  receivable: number;    // 他人借款
+  carLoan: number;       // 车贷
+  mortgage: number;      // 房贷
+  borrowing: number;     // 借贷
+  [key: string]: number; // 索引签名，允许通过字符串键访问
+}
 
 const Overview = () => {
   const chartRef = useRef(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [Liabilities, setLiabilities] = useState(233)
-  const [assetsData, setAssetsData] = useState({
+  const [assetsData, setAssetsData] = useState<AssetsData>({
     currentDeposit: 0, // 银行活期
     alipay: 0,        // 支付宝
     wechat: 0,        // 微信
@@ -18,7 +35,7 @@ const Overview = () => {
     house: 0,         // 房产价值
     fixedDeposit: 0,  // 定期存款
     stocks: 0,        // 股票基金
-    receivable: 0,         // 他人借款
+    receivable: 0,    // 他人借款
     carLoan: 0,       // 车贷
     mortgage: 0,      // 房贷
     borrowing: 0      // 借贷
@@ -56,7 +73,7 @@ const Overview = () => {
                   carLoan: 50000,
                   mortgage: 2000000,
                   borrowing: 0
-                });
+                } as AssetsData);
               }
             } catch (parseError) {
               console.error('JSON解析错误:', parseError);
@@ -72,7 +89,7 @@ const Overview = () => {
                 carLoan: 50000,
                 mortgage: 2000000,
                 borrowing: 0
-              });
+              } as AssetsData);
             }
           } else {
             console.log('使用默认数据');
@@ -88,7 +105,7 @@ const Overview = () => {
               carLoan: 50000,
               mortgage: 2000000,
               borrowing: 0
-            });
+            } as AssetsData);
           }
         } else {
           console.error('API响应错误:', response.status);
@@ -104,7 +121,7 @@ const Overview = () => {
             carLoan: 50000,
             mortgage: 2000000,
             borrowing: 0
-          });
+          } as AssetsData);
         }
       } catch (error) {
         console.error('获取数据失败:', error);
@@ -120,7 +137,7 @@ const Overview = () => {
           carLoan: 50000,
           mortgage: 2000000,
           borrowing: 0
-        });
+        } as AssetsData);
       }
     };
 
@@ -132,27 +149,29 @@ const Overview = () => {
   }, []);
 
   // 更新资产数据的方法
-  const handleUpdateData = (name, value) => {
+  const handleUpdateData = (name: string, value: number) => {
     setAssetsData((prevData) => ({
       ...prevData,
       [name]: value,
     }));
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (formData: any) => {
     try {
-      console.log('提交表单数据:', assetsData);
+      console.log('提交表单数据:', formData);
       // 发送数据到后端API
       const response = await fetch('/api/bills', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(assetsData),
+        body: JSON.stringify(formData),
       });
 
       if (response.ok) {
         console.log('数据保存成功');
+        // 更新本地状态
+        setAssetsData(formData);
         // 重新获取数据以确保显示最新数据
         const fetchResponse = await fetch('/api/bills');
         if (fetchResponse.ok) {
@@ -203,37 +222,12 @@ const Overview = () => {
           </button>
         </header>
 
-        {modalVisible && (
-          <div className={styles.modalOverlay} onClick={() => {
-            console.log('点击遮罩层关闭模态框');
-            setModalVisible(false);
-          }}>
-            <div className={styles.modalContent} onClick={(e) => {
-              console.log('点击模态框内容区域');
-              e.stopPropagation();
-            }}>
-              <div className={styles.modalHeader}>
-                <h3>更新资产信息</h3>
-                <button
-                  className={styles.closeButton}
-                  onClick={() => {
-                    console.log('关闭按钮被点击');
-                    setModalVisible(false);
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-              <div className={styles.modalBody}>
-                <Form
-                  initialData={assetsData}
-                  onUpdateData={handleUpdateData}
-                  onSubmit={handleSubmit}
-                />
-              </div>
-            </div>
-          </div>
-        )}
+        <AssetUpdateModal
+          isVisible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          initialData={assetsData as any}
+          onSubmit={handleSubmit}
+        />
 
         <div className={styles.verticalLayout}>
           {/* 资产总览 - 上半部分 */}
@@ -265,7 +259,6 @@ const Overview = () => {
             >
               <SankeyDiagram 
                 data={assetsData}
-                netWorth={netWorth}
               />
             </div>
           </div>
