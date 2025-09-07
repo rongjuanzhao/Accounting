@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { useCategories } from '../contexts/CategoryContext';
 import styles from './CategoryManagement.module.css';

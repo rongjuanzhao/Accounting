@@ -1,33 +1,33 @@
-/* .ant-layout {
-  background: #f0f2f5;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS variables for theming */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* Custom styles that complement Tailwind */
 .logo {
-  height: 64px;
-  background: rgba(255, 255, 255, 0.2);
-  margin: 16px;
-  color: white;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @apply h-16 bg-white/20 m-4 text-white text-lg flex items-center justify-center;
 }
 
 .nav-item {
-  height: 64px;
-  margin: 16px;
-  color: white;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @apply h-16 m-4 text-white text-lg flex items-center justify-center;
 }
 
 .ant-card {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  @apply rounded-lg shadow-lg;
 }
 
 .ant-statistic-content {
-  font-size: 20px;
-} */
+  @apply text-xl;
+}

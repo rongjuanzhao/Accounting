@@ -1,6 +1,8 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { usePathname } from 'next/navigation';
 import styles from './Sidebar.module.css';
 
 const menuItems = [
@@ -9,7 +11,7 @@ const menuItems = [
 ];
 
 export default function Sidebar() {
-  const router = useRouter();
+  const pathname = usePathname();
 
   return (
     <nav className={styles.sidebar}>
@@ -18,7 +20,7 @@ export default function Sidebar() {
         <Link
           key={item.path}
           href={item.path}
-          className={`${styles.navItem} ${router.pathname === item.path ? styles.active : ''}`}
+          className={`${styles.navItem} ${pathname === item.path ? styles.active : ''}`}
         >
           {item.name}
         </Link>

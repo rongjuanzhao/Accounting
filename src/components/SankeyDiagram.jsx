@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState } from 'react';
 import styles from './SankeyDiagram.module.css';
 import { sankey, sankeyLinkHorizontal } from 'd3-sankey';

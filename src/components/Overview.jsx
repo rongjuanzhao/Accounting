@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef } from 'react';
 import styles from './Overview.module.css';
 import Form from './Form.jsx';

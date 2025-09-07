@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from 'react';
 import { useCategories } from '../contexts/CategoryContext';
 import styles from './Form.module.css';
